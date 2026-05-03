@@ -56,3 +56,11 @@ if (addCandidate) {
         }
     });
 }
+
+// Candidate Card Highlight
+document.querySelectorAll('.vote-card').forEach(card => {
+    card.addEventListener('click', function () {
+        document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+    });
+});

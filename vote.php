@@ -36,35 +36,35 @@
 
                     <form action="vote.php" method="POST">
 
-                        <div class="vote-card card mb-3 p-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="candidate" id="c1" value="1" required>
-                                <label class="form-check-label" for="c1">
+                       <label class="vote-card card mb-3 p-3 w-100" for="c1">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="radio" name="candidate" id="c1" value="1" required>
+                                <div>
                                     <span class="fw-bold">Sara Riaz</span><br>
                                     <small class="text-muted">Community Party</small>
-                                </label>
+                                </div>
                             </div>
-                        </div>
+                        </label>
 
-                        <div class="vote-card card mb-3 p-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="candidate" id="c2" value="2">
-                                <label class="form-check-label" for="c2">
+                        <label class="vote-card card mb-3 p-3 w-100" for="c2">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="radio" name="candidate" id="c2" value="2">
+                                <div>
                                     <span class="fw-bold">Ali Hassan</span><br>
                                     <small class="text-muted">Independent</small>
-                                </label>
+                                </div>
                             </div>
-                        </div>
+                        </label>
 
-                        <div class="vote-card card mb-3 p-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="candidate" id="c3" value="3">
-                                <label class="form-check-label" for="c3">
+                        <label class="vote-card card mb-3 p-3 w-100" for="c3">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="radio" name="candidate" id="c3" value="3">
+                                <div>
                                     <span class="fw-bold">Bilal Khan</span><br>
                                     <small class="text-muted">Reform Party</small>
-                                </label>
+                                </div>
                             </div>
-                        </div>
+                        </label>
 
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-lg" style="background-color: #1F4E79; color: white;">Submit Vote</button>
