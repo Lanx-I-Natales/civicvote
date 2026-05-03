@@ -1,0 +1,70 @@
+/* Global */
+body {
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Navbar */
+.bg-dark-blue {
+    background-color: #1F4E79 !important;
+}
+
+/* Hero Section */
+.hero-section {
+    background-color: #F0F4F8;
+    padding: 100px 0;
+}
+
+/* Stats Section */
+.stats-section {
+    background-color: #ffffff;
+}
+
+.card {
+    border: 1px solid #CCCCCC;
+    border-radius: 8px;
+}
+
+/* Consistent Button Sizing */
+.btn {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.btn-sm {
+    padding: 5px 12px;
+    font-size: 13px;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 16px;
+}
+
+/* Card Spacing */
+.card {
+    border: 1px solid #CCCCCC;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+/* Section Spacing */
+section {
+    padding: 40px 0;
+}
+
+/* Table Button Spacing */
+.table td {
+    vertical-align: middle;
+    padding: 12px;
+}
+
+/* Form Spacing */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    padding: 10px;
+    font-size: 14px;
+}
