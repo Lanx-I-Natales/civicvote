@@ -20,16 +20,19 @@ function filterElections() {
     const search = searchInput ? searchInput.value.toLowerCase() : '';
     const status = filterStatus ? filterStatus.value : 'all';
     const cards = document.querySelectorAll('.election-card');
+    let visible = 0;
 
     cards.forEach(card => {
         const title = card.querySelector('h5').textContent.toLowerCase();
         const cardStatus = card.getAttribute('data-status');
-
         const matchSearch = title.includes(search);
         const matchStatus = status === 'all' || cardStatus === status;
-
         card.style.display = matchSearch && matchStatus ? 'block' : 'none';
+        if (matchSearch && matchStatus) visible++;
     });
+
+    const empty = document.getElementById('emptyState');
+    if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
 }
 
 if (searchInput) searchInput.addEventListener('input', filterElections);
@@ -43,7 +46,7 @@ if (addCandidate) {
         const div = document.createElement('div');
         div.classList.add('mb-2', 'd-flex', 'gap-2');
         div.innerHTML = `
-            <input type="text" name="candidates[]" class="form-control" placeholder="Candidate ${count}">
+            <input type="text" name="candidates[]" class="form-control" placeholder="Candidate ${count}" required>
             <button type="button" class="btn btn-danger btn-sm remove-candidate">Remove</button>
         `;
         document.getElementById('candidateList').appendChild(div);
@@ -64,3 +67,15 @@ document.querySelectorAll('.vote-card').forEach(card => {
         this.classList.add('selected');
     });
 });
+
+// Bootstrap Form Validation
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+

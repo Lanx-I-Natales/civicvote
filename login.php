@@ -10,7 +10,7 @@
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-blue">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-blue sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold" href="index.php">CivicVote</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -25,36 +25,38 @@
             </div>
         </div>
     </nav>
+    <main>
+        <!-- Login Form -->
+        <section class="py-5">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-5">
+                        <h2 class="fw-bold mb-4 text-center">Login</h2>
+                        <form action="login.php" method="POST" novalidate>
 
-    <!-- Login Form -->
-    <section class="py-5">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-5">
-                    <h2 class="fw-bold mb-4 text-center">Login</h2>
-                    <form action="login.php" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Email Address</label>
-                            <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
-                        </div>
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-lg" style="background-color: #1F4E79; color: white; border-color: #1F4E79;">Login</button>
+                            </div>
 
-                        <div class="d-grid mt-4">
-                            <button type="submit" class="btn btn-lg" style="background-color: #1F4E79; color: white; border-color: #1F4E79;">Login</button>
-                        </div>
+                            <p class="text-center mt-3">Don't have an account? <a href="register.php">Register</a></p>
 
-                        <p class="text-center mt-3">Don't have an account? <a href="register.php">Register</a></p>
-
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
+    <?php include 'includes/footer.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/main.js"></script>
