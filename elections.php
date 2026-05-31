@@ -1,3 +1,21 @@
+<?php
+session_start();
+require_once 'includes/db.php';
+require_once 'includes/auth.php';
+
+$stmt = $pdo->query("
+    SELECT * FROM elections 
+    WHERE status != 'draft' 
+    ORDER BY 
+        CASE status 
+            WHEN 'open' THEN 1 
+            WHEN 'closed' THEN 2 
+        END,
+        created_at DESC
+");
+$elections = $stmt->fetchAll();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,7 +38,15 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
                     <li class="nav-item"><a class="nav-link active" href="elections.php">Elections</a></li>
-                    <li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
+					<?php if (isAdmin()): ?>
+						<li class="nav-item"><a class="nav-link" href="admin/dashboard.php">Dashboard</a></li>
+					<?php endif; ?>
+					<?php if (isLoggedIn()): ?>
+						<li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
+					<?php else: ?>
+						<li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
+						<li class="nav-item"><a class="nav-link" href="register.php">Register</a></li>
+					<?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -44,44 +70,43 @@
                     </div>
                 </div>
 
-                <!-- Election Cards -->
-                <div id="electionList">
+				<?php foreach ($elections as $election): ?>
+					<div class="election-card card mb-3 p-3" data-status="<?= $election['status'] ?>">
+						<div class="d-flex justify-content-between align-items-center">
+							<div style="flex: 1;">
+								<h5 class="fw-bold mb-1"><?= htmlspecialchars($election['title']) ?></h5>
+								<small class="text-muted"><?= date('M d, Y', strtotime($election['start_date'])) ?> — <?= date('M d, Y', strtotime($election['end_date'])) ?></small>
+							</div>
+							<div style="flex: 1;" class="text-center">
+								<?php if ($election['status'] === 'open'): ?>
+									<span class="badge" style="background-color: #D4EDDA; color: #155724;">● Open</span>
+								<?php else: ?>
+									<span class="badge" style="background-color: #F8D7DA; color: #721C24;">● Closed</span>
+								<?php endif; ?>
+								<p class="mb-0 fw-bold">
+									<?php
+									$cstmt = $pdo->prepare("SELECT COUNT(*) FROM candidates WHERE election_id = ?");
+									$cstmt->execute([$election['id']]);
+									echo $cstmt->fetchColumn() . ' Candidates';
+									?>
+								</p>
+							</div>
+							<div style="flex: 1;" class="text-end">
+								<?php if ($election['status'] === 'open'): ?>
+									<a href="vote.php?id=<?= $election['id'] ?>" class="btn" style="background-color: #1F4E79; color: white;">Vote Now</a>
+								<?php else: ?>
+									<a href="results.php?id=<?= $election['id'] ?>" class="btn btn-secondary">View Results</a>
+								<?php endif; ?>
+							</div>
+						</div>
+					</div>
+				<?php endforeach; ?>
 
-                    <div class="election-card card mb-3 p-3" data-status="open">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div style="flex: 1;">
-                                <h5 class="fw-bold mb-1">Mayor Election 2026</h5>
-                                <span class="badge mb-1" style="background-color: #D4EDDA; color: #155724;">● Open</span>
-                            </div>
-                            <div style="flex: 1;" class="text-center">
-                                <p class="mb-0 fw-bold">3 Candidates</p>
-                                <small class="text-muted">May 01 — July 31, 2026</small>
-                            </div>
-                            <div style="flex: 1;" class="text-end">
-                                <a href="vote.php" class="btn" style="background-color: #1F4E79; color: white;">Vote Now</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="election-card card mb-3 p-3" data-status="closed">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div style="flex: 1;">
-                                <h5 class="fw-bold mb-1">Mayor Election 2025</h5>
-                                <span class="badge mb-1" style="background-color: #F8D7DA; color: #721C24;">● Closed</span>
-                            </div>
-                            <div style="flex: 1;" class="text-center">
-                                <p class="mb-0 fw-bold">3 Candidates</p>
-                                <small class="text-muted">Jan 01 — Mar 31, 2025</small>
-                            </div>
-                            <div style="flex: 1;" class="text-end">
-                                <a href="results.php" class="btn btn-secondary">View Results</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="emptyState" style="display:none;" class="text-center py-5">
-                        <p class="text-muted">No matching elections found.</p>
-                    </div>
+				<?php if (empty($elections)): ?>
+					<div class="text-center py-5">
+						<p class="text-muted">No elections available at the moment.</p>
+					</div>
+				<?php endif; ?>
 
                 </div>
             </div>
