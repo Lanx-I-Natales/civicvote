@@ -11,6 +11,7 @@ if (!isset($_GET['id'])) {
 $election_id = $_GET['id'];
 
 // Fetch election
+
 $stmt = $pdo->prepare("SELECT * FROM elections WHERE id = ?");
 $stmt->execute([$election_id]);
 $election = $stmt->fetch();
@@ -54,29 +55,7 @@ $candidates = $stmt->fetchAll();
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-blue sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="index.php">CivicVote</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="elections.php">Elections</a></li>
-					<?php if (isAdmin()): ?>
-						<li class="nav-item"><a class="nav-link" href="admin/dashboard.php">Dashboard</a></li>
-					<?php endif; ?>
-					<?php if (isLoggedIn()): ?>
-						<li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
-					<?php else: ?>
-						<li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
-						<li class="nav-item"><a class="nav-link" href="register.php">Register</a></li>
-					<?php endif; ?>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php $base = ''; $current = 'elections'; include 'includes/navbar.php'; ?>
 
     <main>
         <!-- Results Section -->

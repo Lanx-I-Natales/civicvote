@@ -18,7 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user && password_verify($password, $user['password'])) {
         if ($user['is_verified'] == 0) {
-            $error = "Your account is not verified yet. Please wait for face verification.";
+            $_SESSION['error'] = "Your account is not verified yet. Please wait for face verification.";
+            header("Location: login.php");
+            exit();
         } else {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['name'] = $user['name'];
@@ -27,14 +29,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($user['role'] === 'admin') {
                 header("Location: admin/dashboard.php");
             } else {
-                header("Location: index.php");
+                header("Location: elections.php");
             }
             exit();
         }
     } else {
-        $error = "Invalid email or password.";
+        $_SESSION['error'] = "Invalid email or password.";
+        header("Location: login.php");
+        exit();
     }
 }
+
+// Read and clear session messages immediately
+$error = isset($_SESSION['error']) ? $_SESSION['error'] : null;
+unset($_SESSION['error']);
 ?>
 
 <!DOCTYPE html>
@@ -49,22 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-blue sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="index.php">CivicVote</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="elections.php">Elections</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="login.php">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="register.php">Register</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php $base = ''; $current = 'login'; include 'includes/navbar.php'; ?>
+	
     <main>
         <!-- Login Form -->
         <section class="py-5">
@@ -84,7 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
                             </div>
 							
-							<?php if (isset($error)): ?>
+							<div class="text-end mb-3">
+								<a href="forgot_password.php" style="font-size: 13px;">Forgot Password?</a>
+							</div>
+							
+							<?php if ($error): ?>
 								<div class="alert alert-danger"><?= $error ?></div>
 							<?php endif; ?>
 

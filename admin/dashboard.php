@@ -13,13 +13,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $stmt = $pdo->prepare("DELETE FROM elections WHERE id = ?");
         $stmt->execute([$election_id]);
+        $_SESSION['success'] = "Election deleted successfully!";
     } elseif ($action === 'publish') {
         $stmt = $pdo->prepare("UPDATE elections SET status = 'open' WHERE id = ?");
         $stmt->execute([$election_id]);
+        $_SESSION['success'] = "Election published successfully!";
     } elseif ($action === 'close') {
         $close_reason = trim($_POST['close_reason']);
         $stmt = $pdo->prepare("UPDATE elections SET status = 'closed', close_reason = ? WHERE id = ?");
         $stmt->execute([$close_reason, $election_id]);
+        $_SESSION['success'] = "Election closed successfully!";
     }
 
     header("Location: dashboard.php");
@@ -42,6 +45,11 @@ $elections = $pdo->query("
         END,
         created_at DESC
 ")->fetchAll();
+
+// Read and clear session messages immediately
+$error = isset($_SESSION['error']) ? $_SESSION['error'] : null;
+$success = isset($_SESSION['success']) ? $_SESSION['success'] : null;
+unset($_SESSION['error'], $_SESSION['success']);
 ?>
 
 <!DOCTYPE html>
@@ -56,28 +64,21 @@ $elections = $pdo->query("
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-blue sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="../index.php">CivicVote</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="../index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="../elections.php">Elections</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="dashboard.php">Dashboard</a></li>
-					<li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php $base = '../'; $current = 'dashboard'; include '../includes/navbar.php'; ?>
 
     <main>
         <section class="py-4">
             <div class="container">
 
                 <h2 class="fw-bold mb-4">Admin Dashboard</h2>
+
+                <?php if ($error): ?>
+					<div class="alert alert-danger"><?= $error ?></div>
+				<?php endif; ?>
+				<?php if ($success): ?>
+					<div class="alert alert-success"><?= $success ?></div>
+				<?php endif; ?>
+
                 <!-- Stat Cards -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
@@ -125,61 +126,61 @@ $elections = $pdo->query("
                         </thead>
                         <tbody>
                             <?php foreach ($elections as $election): ?>
-								<tr>
-									<td class="ps-3 fw-bold"><?= htmlspecialchars($election['title']) ?></td>
-									<td>
-										<?php if ($election['status'] === 'draft'): ?>
-											<span class="badge" style="background-color: #FFF3CD; color: #856404;">● Draft</span>
-										<?php elseif ($election['status'] === 'open'): ?>
-											<span class="badge" style="background-color: #D4EDDA; color: #155724;">● Open</span>
-										<?php else: ?>
-											<span class="badge" style="background-color: #F8D7DA; color: #721C24;">● Closed</span>
-										<?php endif; ?>
-									</td>
-									<td>
-										<?php
-										$cstmt = $pdo->prepare("SELECT COUNT(*) FROM candidates WHERE election_id = ?");
-										$cstmt->execute([$election['id']]);
-										echo $cstmt->fetchColumn();
-										?>
-									</td>
-									<td class="d-flex gap-2">
-										<?php if ($election['status'] === 'draft'): ?>
-											<a href="manage.php?id=<?= $election['id'] ?>" class="btn btn-sm" style="background-color: #1F4E79; color: white;">Edit</a>
-											<form method="POST" action="dashboard.php" style="display:inline;">
-												<input type="hidden" name="election_id" value="<?= $election['id'] ?>">
-												<button name="action" value="delete" class="btn btn-sm btn-danger">Delete</button>
-												<button name="action" value="publish" class="btn btn-sm btn-success">Publish</button>
-											</form>
-										<?php elseif ($election['status'] === 'open'): ?>
-											<button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#closeModal<?= $election['id'] ?>">Close</button>
-											<div class="modal fade" id="closeModal<?= $election['id'] ?>" tabindex="-1">
-												<div class="modal-dialog">
-													<div class="modal-content">
-														<div class="modal-header">
-															<h5 class="modal-title">Close Election</h5>
-															<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-														</div>
-														<div class="modal-body">
-															<form method="POST" action="dashboard.php">
-																<input type="hidden" name="election_id" value="<?= $election['id'] ?>">
-																<label class="form-label">Reason for closing</label>
-																<textarea name="close_reason" class="form-control" rows="3" placeholder="Enter reason..." required></textarea>
-																<div class="modal-footer px-0 pb-0">
-																	<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-																	<button name="action" value="close" class="btn btn-danger">Confirm Close</button>
-																</div>
-															</form>
-														</div>
-													</div>
-												</div>
-											</div>
-										<?php else: ?>
-											<a href="../results.php?id=<?= $election['id'] ?>" class="btn btn-sm btn-secondary">View Results</a>
-										<?php endif; ?>
-									</td>
-								</tr>
-							<?php endforeach; ?>
+                                <tr>
+                                    <td class="ps-3 fw-bold"><?= htmlspecialchars($election['title']) ?></td>
+                                    <td>
+                                        <?php if ($election['status'] === 'draft'): ?>
+                                            <span class="badge" style="background-color: #FFF3CD; color: #856404;">● Draft</span>
+                                        <?php elseif ($election['status'] === 'open'): ?>
+                                            <span class="badge" style="background-color: #D4EDDA; color: #155724;">● Open</span>
+                                        <?php else: ?>
+                                            <span class="badge" style="background-color: #F8D7DA; color: #721C24;">● Closed</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $cstmt = $pdo->prepare("SELECT COUNT(*) FROM candidates WHERE election_id = ?");
+                                        $cstmt->execute([$election['id']]);
+                                        echo $cstmt->fetchColumn();
+                                        ?>
+                                    </td>
+                                    <td class="d-flex gap-2">
+                                        <?php if ($election['status'] === 'draft'): ?>
+                                            <a href="manage.php?id=<?= $election['id'] ?>" class="btn btn-sm" style="background-color: #1F4E79; color: white;">Edit</a>
+                                            <form method="POST" action="dashboard.php" style="display:inline;">
+                                                <input type="hidden" name="election_id" value="<?= $election['id'] ?>">
+                                                <button name="action" value="delete" class="btn btn-sm btn-danger">Delete</button>
+                                                <button name="action" value="publish" class="btn btn-sm btn-success">Publish</button>
+                                            </form>
+                                        <?php elseif ($election['status'] === 'open'): ?>
+                                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#closeModal<?= $election['id'] ?>">Close</button>
+                                            <div class="modal fade" id="closeModal<?= $election['id'] ?>" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Close Election</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <form method="POST" action="dashboard.php">
+                                                                <input type="hidden" name="election_id" value="<?= $election['id'] ?>">
+                                                                <label class="form-label">Reason for closing</label>
+                                                                <textarea name="close_reason" class="form-control" rows="3" placeholder="Enter reason..." required></textarea>
+                                                                <div class="modal-footer px-0 pb-0">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button name="action" value="close" class="btn btn-danger">Confirm Close</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <a href="../results.php?id=<?= $election['id'] ?>" class="btn btn-sm btn-secondary">View Results</a>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>

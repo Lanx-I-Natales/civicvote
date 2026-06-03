@@ -2,7 +2,11 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-4 text-center text-md-start mb-3 mb-md-0">
-                <h5 class="fw-bold mb-0">CivicVote</h5>
+                <h5 class="fw-bold mb-0">
+					<a class="navbar-brand fw-bold" href="<?= $base ?>index.php">
+						<span class="brand-civic">Civic</span><span class="brand-vote">Vote</span>
+					</a>
+				</h5>
                 <small style="color: #AED6F1;">Community Online Voting System</small>
             </div>
             <div class="col-md-4 text-center mb-3 mb-md-0">

@@ -68,41 +68,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $cnic = trim($_POST['cnic']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
 
-    // Handle file uploads
-    $cnic_pic = uniqid() . '_' . basename($_FILES['cnic_pic']['name']);
-    $profile_pic = uniqid() . '_' . basename($_FILES['profile_pic']['name']);
-
-    $cnic_path = 'assets/uploads/cnic/' . $cnic_pic;
-    $profile_path = 'assets/uploads/selfies/' . $profile_pic;
-
-    move_uploaded_file($_FILES['cnic_pic']['tmp_name'], $cnic_path);
-    move_uploaded_file($_FILES['profile_pic']['tmp_name'], $profile_path);
-
-    // Check if email or CNIC already exists
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? OR cnic = ?");
-    $stmt->execute([$email, $cnic]);
-
-    if ($stmt->rowCount() > 0) {
-        $error = "Email or CNIC already registered.";
+    // Email validation
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['error'] = "Invalid email address.";
+        header("Location: register.php");
+        exit();
+    }
+    // Password match
+    elseif ($password !== $confirm_password) {
+        $_SESSION['error'] = "Passwords do not match.";
+        header("Location: register.php");
+        exit();
+    }
+    // Strong password
+    elseif (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password) || !preg_match('/[\W]/', $password)) {
+        $_SESSION['error'] = "Password must be at least 8 characters, contain one uppercase letter, one number and one special character.";
+        header("Location: register.php");
+        exit();
     } else {
-		// Verify faces
-		$face_score = verifyFaces($cnic_path, $profile_path);
-		$is_verified = $face_score >= 60 ? 1 : 0;
+        $password = password_hash($password, PASSWORD_DEFAULT);
 
-		// Insert user
-		$stmt = $pdo->prepare("INSERT INTO users (name, email, cnic, password, cnic_pic, profile_pic, is_verified, face_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-		$stmt->execute([$name, $email, $cnic, $password, $cnic_path, $profile_path, $is_verified, $face_score]);
+        // Handle file uploads
+        $cnic_pic = uniqid() . '_' . basename($_FILES['cnic_pic']['name']);
+        $profile_pic = uniqid() . '_' . basename($_FILES['profile_pic']['name']);
 
-		if ($is_verified) {
-			sendVerificationEmail($email, $name);
-			$success = "Registration successful! Your identity has been verified.";
-		} else {
-			$error = "Registration failed. Face verification score too low (" . round($face_score, 2) . "%). Please upload clearer pictures.";
+        $cnic_path = 'assets/uploads/cnic/' . $cnic_pic;
+        $profile_path = 'assets/uploads/selfies/' . $profile_pic;
+
+        move_uploaded_file($_FILES['cnic_pic']['tmp_name'], $cnic_path);
+        move_uploaded_file($_FILES['profile_pic']['tmp_name'], $profile_path);
+		
+		// Check if both images are the same
+		$cnic_hash = md5_file($cnic_path);
+		$profile_hash = md5_file($profile_path);
+
+		if ($cnic_hash === $profile_hash) {
+			$_SESSION['error'] = "CNIC picture and profile picture cannot be the same image.";
+			header("Location: register.php");
+			exit();
 		}
-	}
+
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? OR cnic = ?");
+        $stmt->execute([$email, $cnic]);
+
+        if ($stmt->rowCount() > 0) {
+            $_SESSION['error'] = "Email or CNIC already registered.";
+            header("Location: register.php");
+            exit();
+        } else {
+            $face_score = verifyFaces($cnic_path, $profile_path);
+            $is_verified = $face_score >= 60 ? 1 : 0;
+
+            $stmt = $pdo->prepare("INSERT INTO users (name, email, cnic, password, cnic_pic, profile_pic, is_verified, face_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$name, $email, $cnic, $password, $cnic_path, $profile_path, $is_verified, $face_score]);
+
+            if ($is_verified) {
+                sendVerificationEmail($email, $name);
+                $_SESSION['success'] = "Registration successful! Your identity has been verified.";
+                header("Location: register.php");
+                exit();
+            } else {
+                $_SESSION['error'] = "Registration failed. Face verification score too low (" . round($face_score, 2) . "%). Please upload clearer pictures.";
+                header("Location: register.php");
+                exit();
+            }
+        }
+    }
 }
+
+// Read and clear session messages immediately
+$error = isset($_SESSION['error']) ? $_SESSION['error'] : null;
+$success = isset($_SESSION['success']) ? $_SESSION['success'] : null;
+unset($_SESSION['error'], $_SESSION['success']);
 ?>
 
 <!DOCTYPE html>
@@ -117,22 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-blue sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="index.php">CivicVote</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="elections.php">Elections</a></li>
-                    <li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="register.php">Register</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php $base = ''; $current = 'register'; include 'includes/navbar.php'; ?>
 
     <main>
         <!-- Register Form -->
@@ -158,10 +183,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" name="cnic" id="cnic" class="form-control" placeholder="Enter 13 digit CNIC" maxlength="15" required>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Password</label>
-                                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
-                            </div>
+							<div class="mb-3">
+								<label class="form-label">Password</label>
+								<input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+								<div id="passwordChecklist" class="mt-2" style="font-size: 13px; display: none;">
+									<div id="check-length" class="text-danger">✕ At least 8 characters</div>
+									<div id="check-upper" class="text-danger">✕ One uppercase letter</div>
+									<div id="check-lower" class="text-danger">✕ One lowercase letter</div>
+									<div id="check-number" class="text-danger">✕ One number</div>
+									<div id="check-special" class="text-danger">✕ One special character</div>
+								</div>
+							</div>		
+							
+							<div class="mb-3">
+								<label class="form-label">Confirm Password</label>
+								<input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Re-enter your password" required>
+								<div id="passwordMatch" class="form-text" style="display:none;"></div>
+							</div>
 
                             <div class="mb-3">
                                 <label class="form-label">CNIC Front Picture</label>
@@ -173,10 +211,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="file" name="profile_pic" class="form-control" accept="image/*" required>
                             </div>
 							
-							<?php if (isset($error)): ?>
+							<?php if ($error): ?>
 								<div class="alert alert-danger"><?= $error ?></div>
 							<?php endif; ?>
-							<?php if (isset($success)): ?>
+							<?php if ($success): ?>
 								<div class="alert alert-success"><?= $success ?></div>
 							<?php endif; ?>
 

@@ -3,8 +3,10 @@ session_start();
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 redirectIfNotLoggedIn();
+
 if (isAdmin()) {
     header("Location: elections.php");
+    $_SESSION['error'] = "Admins are not allowed to vote.";
     exit();
 }
 
@@ -39,14 +41,29 @@ $stmt->execute([$election_id]);
 $candidates = $stmt->fetchAll();
 
 // Handle vote submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($error)) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_SESSION['error'])) {
     $candidate_id = $_POST['candidate'];
 
-    $stmt = $pdo->prepare("INSERT INTO votes (election_id, candidate_id, user_id) VALUES (?, ?, ?)");
-    $stmt->execute([$election_id, $candidate_id, $_SESSION['user_id']]);
-
-    $success = "Your vote has been cast successfully!";
+    // Check double vote
+    $stmt = $pdo->prepare("SELECT id FROM votes WHERE election_id = ? AND user_id = ?");
+    $stmt->execute([$election_id, $_SESSION['user_id']]);
+    
+    if ($stmt->rowCount() > 0) {
+        $_SESSION['error'] = "You have already voted in this election!";
+    } else {
+        $stmt = $pdo->prepare("INSERT INTO votes (election_id, candidate_id, user_id) VALUES (?, ?, ?)");
+        $stmt->execute([$election_id, $candidate_id, $_SESSION['user_id']]);
+        $_SESSION['success'] = "Your vote has been cast successfully!";
+    }
+    
+    header("Location: vote.php?id=" . $election_id);
+    exit();
 }
+
+// Read and clear session messages immediately
+$error = isset($_SESSION['error']) ? $_SESSION['error'] : null;
+$success = isset($_SESSION['success']) ? $_SESSION['success'] : null;
+unset($_SESSION['error'], $_SESSION['success']);
 ?>
 
 <!DOCTYPE html>
@@ -61,21 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($error)) {
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-blue sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="index.php">CivicVote</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="elections.php">Elections</a></li>
-                    <li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php $base = ''; $current = 'elections'; include 'includes/navbar.php'; ?>
 
     <main>
         <!-- Vote Section -->
@@ -86,19 +89,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($error)) {
                         <h2 class="fw-bold"><?= htmlspecialchars($election['title']) ?></h2>
 						<p class="text-muted">Select one candidate</p>
 
-						<?php if (isset($error)): ?>
-							<div class="alert alert-danger"><?= $error ?></div>
-						<?php endif; ?>
-
-						<?php if (isset($success)): ?>
-							<div class="alert alert-success"><?= $success ?></div>
-						<?php endif; ?>
+							<?php if ($error): ?>
+								<div class="alert alert-danger"><?= $error ?></div>
+							<?php endif; ?>
+							<?php if ($success): ?>
+								<div class="alert alert-success"><?= $success ?></div>
+							<?php endif; ?>
 
 						<form action="vote.php?id=<?= $election_id ?>" method="POST" novalidate>
 							<?php foreach ($candidates as $candidate): ?>
 								<label class="vote-card card mb-3 p-3 w-100" for="c<?= $candidate['id'] ?>">
 									<div class="d-flex align-items-center gap-3">
 										<input type="radio" name="candidate" id="c<?= $candidate['id'] ?>" value="<?= $candidate['id'] ?>" required>
+										<?php if ($candidate['photo']): ?>
+											<img src="<?= $candidate['photo'] ?>" alt="<?= htmlspecialchars($candidate['name']) ?>" width="50" height="50" style="border-radius: 50%; object-fit: cover;">
+										<?php else: ?>
+											<div style="width: 50px; height: 50px; border-radius: 50%; background-color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+										<?php endif; ?>
 										<div>
 											<span class="fw-bold"><?= htmlspecialchars($candidate['name']) ?></span>
 										</div>
